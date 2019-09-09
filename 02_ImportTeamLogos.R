@@ -1,17 +1,11 @@
-setwd("~/Documents/04_Projects/2019/02_NBA_TradeAnimation")
-setwd("~/Desktop")
-
-#install.packages("ggmap")
-#install.packages("maps")
-#install.packages("imager")
-
 library(dplyr)
 library(magick)
-library(imager)
 library(png)
 library(grid)
+library(gridExtra)
+setwd("~/Documents/04_Projects/03_NBALogos")
 
-setwd("~/Documents/04_Projects//03_NBALogos")
+#m <- readPNG(system.file("img", "Rlogo.png", package="png"), FALSE)
 
 teams <- c("ATL","BOS","BRK","CHI","CHO","CLE",
            "DAL", "DEN", "DET", "GSW", "HOU", "IND",
@@ -25,16 +19,20 @@ for(s in teams) {
     image_scale("50x50!") %>%
     image_blur(0,0) %>%
     image_modulate(brightness = 90) %>%
-    image_modulate(saturation = 45) %>%
+    image_modulate(saturation = 40) %>%
     image_modulate(hue = 100) %>%
-    image_convert("png")
+    image_fill('steelblue', fuzz = 15) %>%
+    image_colorize(opacity = 40, color = 'white') %>%
+  #image_quantize(max = 10, colorspace = 'gray') %>%
+# image_quantize(max = 15, colorspace = 'rgb') %>%
+   # image_quantize(max = 10, colorspace = 'cmyk') %>%
+   image_convert("png")
 }
 
-img[[1]]
+img[[20]]
 
 ATL_logo <- img[[1]] %>%
   rasterGrob(interpolate=TRUE)
-
 BOS_logo <- img[[2]] %>%
   rasterGrob(interpolate=TRUE)
 BRK_logo <- img[[3]] %>%
@@ -93,3 +91,5 @@ UTA_logo <- img[[29]] %>%
   rasterGrob(interpolate=TRUE)
 WAS_logo <- img[[30]] %>%
   rasterGrob(interpolate=TRUE)
+
+setwd("~/Documents/04_Projects//02_NBA_PlayerMap/Version_04")

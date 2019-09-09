@@ -4,21 +4,13 @@ library(tidyverse)
 library(rvest)
 
 # determine size of logo to show on the map
-d <- 2
+d <- 1.5
 f <- 1
 m <- "PPG"
   
 # import stadium coordinates from CSV file
 #url_csv2 <- 'https://raw.githubusercontent.com/alamine53/nbatrademap/master/raw_NbaCities_adj.csv'
 nbacities <- read_csv("01_RawData/raw_NbaCities_adj.csv") %>%
-  mutate(long_adj_left = long - f) %>%
-  mutate(long_adj_right = long + f) %>%
-  mutate(lat_adj_up = lat + f) %>%
-  mutate(lat_adj_down = lat - f) %>%
-#  mutate(long_new = replace(long, names=="LAL", long_adj_left)) %>%
- # mutate(long = replace(long, names=="LAC", long_adj_right)) %>%
-  #mutate(long = replace(long, names=="BRK", long_adj_right)) %>%
-  #mutate(long = replace(long, names=="NYK", long_adj_left)) %>%
   mutate(long_min = long - d) %>%
   mutate(long_max = long + d) %>%
   mutate(lat_min = lat - d) %>%
