@@ -2,6 +2,11 @@ library(tidyverse)
 library(readr)
 library(ggmap)
 library(gganimate)
+library(grid)
+library(gtable)
+library(gridExtra)
+library(magick)
+
 rm(list = ls())
 setwd("C:/Users/ralamine/Desktop")
 
@@ -12,8 +17,9 @@ transactions <- read_csv("https://raw.githubusercontent.com/alamine53/nba_tradem
   arrange(Rk) %>% group_by(Player) %>% mutate(state = 1:2, show_time = cumsum(state)) %>% ungroup() %>% select(Rk, state, Player, PPG, team, show_time) %>%
   left_join(arenas, by = c("team" = "names")) %>%
   select(-team.y, -east) %>%
-  mutate(nframes = 1:n())
-  
+  mutate(nframes = 1:n()) %>%
+  mutate(PPG2 = ifelse(state == 1, 0, PPG), PPG_total = cumsum(PPG2))
+
 # static map  
 nba_map <- ggplot() + 
             theme_void() +
@@ -30,7 +36,7 @@ nba_map <- ggplot() +
               plot.title = element_text(size=22, family = "Arial", face = "bold")
             ) +
             labs(title = "NBA Player Movements, Summer 2019", subtitle = "Player", caption = "Creation: Ramzy Al-Amine | © courtsidecoder.home.blog") +
-            geom_polygon(data = map_data("usa"), aes(x = long, y = lat, group = group, size = 1.25), 
+            geom_polygon(data = map_data("usa"), aes(x = long, y = lat, group = group, size = 1), 
                          fill = "white", alpha = 0.05, colour = "#dcdcd9", show.legend = FALSE) +
             geom_point(data = arenas, aes(x = long, y = lat), 
                        shape = 2, color = "grey90", fill = "white", size = 4) +
@@ -39,9 +45,44 @@ nba_map <- ggplot() +
             geom_text(data = transactions, aes(x = long, y = lat, label = Player), 
                       hjust = 0, nudge_x = -1, nudge_y = 1, family = "Arial", fontface = "bold") +
             geom_path(data = transactions, aes(x = long, y = lat, group = Player),
-                       size = 2, colour = "red", arrow = arrow(length = unit(0.5, "cm")))
+                       size = 1.5, colour = "red", arrow = arrow(length = unit(0.5, "cm")))
+nba_map
 
-# animate map
-animate(nba_map + transition_reveal(nframes), 
-          fps = 10, duration = 10)
+# static bar chart
+nba_bar <- ggplot(data=transactions, aes(x=1, y=PPG_total, colour = Player), show.legend = FALSE) +
+  geom_bar(stat = 'identity', width = 0.001, show.legend = FALSE) +
+  geom_label(aes(label = round(PPG_total, digits = 1)), show.legend = FALSE) +
+  theme_void()
 
+# animate charts
+nba_map_anim <- animate(nba_map + transition_reveal(nframes), 
+          fps = 10, duration = 10)    
+#    renderer = file_renderer("map_anim", overwrite = TRUE))
+
+nba_bar_anim <- animate(nba_bar + transition_time(nframes), 
+        fps = 10, duration = 10)
+       # renderer = file_renderer("bar_anim", overwrite = TRUE))
+
+a_mgif <- image_read(nba_map_anim)
+b_mgif <- image_read(nba_bar_anim)
+new_gif <- image_append(c(a_mgif[1], b_mgif[1]))
+for(i in 2:100){
+  combined <- image_append(c(a_mgif[i], b_mgif[i]))
+  new_gif <- c(new_gif, combined)
+}
+
+new_gif
+
+# assemble (version 2)
+map_table <- ggplotGrob(nba_map_anim)
+bar_table <- ggplotGrob(nba_bar_anim)
+composite <- gtable(widths = unit(c(3, 0.15, 0.2, 0), 'null'), 
+                    heights = unit(c(0.15, 0.6, 0.15, 1.4), 'null'), 
+                    respect = TRUE)
+composite <- gtable_add_grob(composite, map_table, 1, 1, 4, 2)
+composite <- gtable_add_grob(composite, bar_table, 1,3,4,4)
+grid.newpage()
+grid.draw(composite)
+
+animate(composite + transition_time(nframes),
+        fps = 10, duration = 10)
